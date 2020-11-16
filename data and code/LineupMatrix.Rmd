@@ -1,0 +1,118 @@
+
+```{r}
+library(tidyverse)
+library(data.table)
+library(zoo)
+
+all_lineup <- read_csv("AllLineups.csv")
+home_off <- read_csv("HomeOffenseData.csv")
+
+all_lineup$stint_id <- ifelse(all_lineup$Starter != 0, paste(all_lineup$gameid,"_1", sep=""), 0)
+lineup_matrix <- spread(all_lineup, A, Starter)
+lineup_matrix$gameid <- NULL
+lineup_matrix <- lineup_matrix %>% filter(stint_id!=0)
+lineup_matrix[is.na(lineup_matrix)] <- 0
+
+homedata <- merge(home_off, lineup_matrix, by="stint_id", all.x = TRUE)
+
+homedata$start_stint_time[is.na(homedata$start_stint_time)] <- 0
+homedata$subbed_player[is.na(homedata$subbed_player)] <- "Dummy"
+homedata$replaced_player[is.na(homedata$replaced_player)] <- "Dummy"
+homedata$Dummy <- 15
+homedata$sub_team[is.na(homedata$sub_team)] <- "Dummy"
+
+homedata$replaced_player <- gsub("Jeffrey Schlupp", "Jeff Schlupp", homedata$replaced_player)
+homedata$replaced_player <- gsub("Kiko Femenía", "Kiko", homedata$replaced_player)
+homedata$replaced_player <- gsub("Pascal Groß", "Pascal Gross", homedata$replaced_player)
+homedata$replaced_player <- gsub("Arnaut Danjuma Groeneveld", "Arnaut Danjuma", homedata$replaced_player)
+homedata$replaced_player <- gsub("Pierre-Emerick", "Pierre-Emerick Aubameyang", homedata$replaced_player)
+homedata$replaced_player <- gsub("Anwar El Ghazi", "Anwar El-Ghazi", homedata$replaced_player)
+homedata$replaced_player <- gsub("Rodrigo", "Rodri", homedata$replaced_player)
+homedata$replaced_player <- gsub("Etienne Capoue", "Étienne Capoue", homedata$replaced_player)
+homedata$replaced_player <- gsub("Matt Doherty", "Matthew Doherty", homedata$replaced_player)
+homedata$replaced_player <- gsub("Andrew Robertson", "Andy Robertson", homedata$replaced_player)
+homedata$replaced_player <- gsub("Ismaila Sarr", "Ismaïla Sarr", homedata$replaced_player)
+homedata$replaced_player <- gsub("Joseph Gomez", "Joe Gomez", homedata$replaced_player)
+homedata$replaced_player <- gsub("Eddie Nketiah", "Edward Nketiah", homedata$replaced_player)
+homedata$replaced_player <- gsub("Pierre-Emile", "Pierre-Emile Højbjerg", homedata$replaced_player)
+homedata$replaced_player <- gsub("Ezri Konsa Ngoyo", "Ezri Konsa", homedata$replaced_player)
+homedata$replaced_player <- gsub("Séamus Coleman", "Seamus Coleman", homedata$replaced_player)
+homedata$replaced_player <- gsub("Daniel Drinkwater", "Danny Drinkwater", homedata$replaced_player)
+homedata$replaced_player <- gsub("Emerson", "Emerson Palmieri", homedata$replaced_player)
+homedata$replaced_player <- gsub("Sébastien Haller", "Sébastian Haller", homedata$replaced_player)
+homedata$replaced_player <- gsub("Joe Willock", "Joseph Willock", homedata$replaced_player)
+homedata$replaced_player <- gsub("Frederic Guilbert", "Frédéric Guilbert", homedata$replaced_player)
+homedata$replaced_player <- gsub("Rúben Vinagre", "Ruben Vinagre", homedata$replaced_player)
+homedata$replaced_player <- gsub("Johann Gudmundsson", "Jóhann Gudmundsson", homedata$replaced_player)
+homedata$replaced_player <- gsub("Ki Sung-yueng", "Ki Sung-Yueng", homedata$replaced_player)
+homedata$replaced_player <- gsub("Chicharito", "Javier Hernández", homedata$replaced_player)
+
+homedata$subbed_player <- gsub("Jeffrey Schlupp", "Jeff Schlupp", homedata$subbed_player)
+homedata$subbed_player <- gsub("Kiko Femenía", "Kiko", homedata$subbed_player)
+homedata$subbed_player <- gsub("Pascal Groß", "Pascal Gross", homedata$subbed_player)
+homedata$subbed_player <- gsub("Arnaut Danjuma Groeneveld", "Arnaut Danjuma", homedata$subbed_player)
+homedata$subbed_player <- gsub("Pierre-Emerick", "Pierre-Emerick Aubameyang", homedata$subbed_player)
+homedata$subbed_player <- gsub("Anwar El Ghazi", "Anwar El-Ghazi", homedata$subbed_player)
+homedata$subbed_player <- gsub("Rodrigo", "Rodri", homedata$subbed_player)
+homedata$subbed_player <- gsub("Etienne Capoue", "Étienne Capoue", homedata$subbed_player)
+homedata$subbed_player <- gsub("Matt Doherty", "Matthew Doherty", homedata$subbed_player)
+homedata$subbed_player <- gsub("Andrew Robertson", "Andy Robertson", homedata$subbed_player)
+homedata$subbed_player <- gsub("Ismaila Sarr", "Ismaïla Sarr", homedata$subbed_player)
+homedata$subbed_player <- gsub("Joseph Gomez", "Joe Gomez", homedata$subbed_player)
+homedata$subbed_player <- gsub("Eddie Nketiah", "Edward Nketiah", homedata$subbed_player)
+homedata$subbed_player <- gsub("Pierre-Emile", "Pierre-Emile Højbjerg", homedata$subbed_player)
+homedata$subbed_player <- gsub("Emile Højbjerg", "Pierre-Emile Højbjerg", homedata$subbed_player)
+homedata$subbed_player <- gsub("Ezri Konsa Ngoyo", "Ezri Konsa", homedata$subbed_player)
+homedata$subbed_player <- gsub("Séamus Coleman", "Seamus Coleman", homedata$subbed_player)
+homedata$subbed_player <- gsub("Daniel Drinkwater", "Danny Drinkwater", homedata$subbed_player)
+homedata$subbed_player <- gsub("Emerson", "Emerson Palmieri", homedata$subbed_player)
+homedata$subbed_player <- gsub("Sébastien Haller", "Sébastian Haller", homedata$subbed_player)
+homedata$subbed_player <- gsub("Joe Willock", "Joseph Willock", homedata$subbed_player)
+homedata$subbed_player <- gsub("Frederic Guilbert", "Frédéric Guilbert", homedata$subbed_player)
+homedata$subbed_player <- gsub("Rúben Vinagre", "Ruben Vinagre", homedata$subbed_player)
+homedata$subbed_player <- gsub("Johann Gudmundsson", "Jóhann Gudmundsson", homedata$subbed_player)
+homedata$subbed_player <- gsub("Ki Sung-yueng", "Ki Sung-Yueng", homedata$subbed_player)
+homedata$subbed_player <- gsub("Chicharito", "Javier Hernández", homedata$subbed_player)
+homedata$subbed_player <- gsub("Brandon Pierrick Keutcha", "Brandon Pierrick", homedata$subbed_player)
+homedata$subbed_player <- gsub("Emiliano Martínez", "Emiliano Martinez", homedata$subbed_player)
+homedata$subbed_player <- gsub("Joel Matip", "Joël Matip", homedata$subbed_player)
+homedata$subbed_player <- gsub("Maximilian Kilman", "Max Kilman", homedata$subbed_player)
+homedata$subbed_player <- gsub("Isaac Success", "Issac Success", homedata$subbed_player)
+homedata$subbed_player <- gsub("Roberto Jiménez", "Roberto", homedata$subbed_player)
+homedata$subbed_player <- gsub("Eric Garcia", "Eric García", homedata$subbed_player)
+homedata$subbed_player <- gsub("Kévin Nkoudou", "Georges-Kévin Nkoudou", homedata$subbed_player)
+homedata$subbed_player <- gsub("Philippe Gbamin", "Jean-Philippe Gbamin", homedata$subbed_player)
+
+homedata$sub_team <- gsub("Bournemouth", "AFC Bournemouth", homedata$sub_team)
+homedata$sub_team <- gsub("Brighton and Hove Albion", "Brighton & Hove Albion", homedata$sub_team)
+
+homedata$red_name <- gsub("Eddie Nketiah", "Edward Nketiah", homedata$red_name)
+homedata$red_name <- gsub("Séamus Coleman", "Seamus Coleman", homedata$red_name)
+
+homedata$sub_location <- ifelse(homedata$home_team==homedata$sub_team, "Home",ifelse(homedata$away_team==homedata$sub_team, "Away", "Dummy"))
+
+homedata$subhome_player <- ifelse(homedata$sub_location=="Home", homedata$subbed_player, "Dummy")
+homedata$subaway_player <- ifelse(homedata$sub_location=="Away", homedata$subbed_player, "Dummy")
+
+substuff <- homedata
+substuff$red_name[is.na(substuff$red_name)] <- "Dummy"
+
+
+substuff[cbind(seq(nrow(substuff)), match(substuff$replaced_player, colnames(substuff[21:536,])))] <- 0   
+substuff[cbind(seq(nrow(substuff)), match(substuff$subhome_player, colnames(substuff[21:536,])))] <- 1
+substuff[cbind(seq(nrow(substuff)), match(substuff$subaway_player, colnames(substuff[21:536,])))] <- -1
+substuff[cbind(seq(nrow(substuff)), match(substuff$red_name, colnames(substuff[21:536,])))] <- 0   
+
+
+subs <- na.locf(substuff)
+
+final_lineup_matrix <- subs %>% select(-c(game_id, home_team, away_team, start_stint_time, end_stint_time, total_shot_attempt, total_corner, red_card_drawn, yellow_card_drawn, total_offside, total_free_kick_won, total_penalty, counter_attacks, shot_on_target, subbed_player, replaced_player, sub_team, red_name,  key_passes, sub_location, subaway_player, subhome_player, goals_scored, stint_id))
+
+final_lineup_matrix <- final_lineup_matrix[,which(colSums(abs(final_lineup_matrix))!=0)]
+stint_id <-subs$stint_id
+final_lineup_matrix <- cbind(stint_id, final_lineup_matrix)
+
+write_csv(final_lineup_matrix, "FINAL_LINEUP_MATRIX.csv")
+
+```
+

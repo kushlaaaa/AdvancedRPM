@@ -1,0 +1,11 @@
+﻿Category,Weights
+GoalsWeight ,1
+ShotAttemptWeight ,0.107951
+CornersWeight ,0.03
+YellowCardsWeight ,0.029478458
+RedCardsWeight ,0.088435374
+FreeKicksWeight ,0.021
+PenaltiesWeight ,0.76
+CounterAttacksWeight ,0.124
+ShotsOnTargetWeight ,0.32853
+KeyPassesWeight ,0.099448

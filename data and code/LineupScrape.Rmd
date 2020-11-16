@@ -1,0 +1,162 @@
+
+```{r}
+library(tidyverse)
+library(rvest)
+library(fcscrapR)
+library(tm)
+
+```
+
+```{r}
+
+seasonurl <- ("https://www.espn.com/soccer/standings/_/league/ENG.1/season/2019")
+seasonwebpage <- read_html(seasonurl)
+seasonwebpage %>% html_nodes("table") %>% html_table(fill = TRUE) -> seasontables
+seasontables[[1]]
+
+url <- ("`https://www.espn.com/soccer/lineups?gameId=541740")
+
+webpage <- read_html(url)
+
+webpage %>% html_nodes("span.name a ") %>% html_attr(name = "data-player-uid") 
+
+webpage %>% html_nodes("table") %>% html_table(fill = TRUE) -> tables
+
+test <- tables[[1]] 
+test
+write_csv(test, "test.csv")
+tables[[1]]
+
+fbref <- 
+
+url <- ("https://fbref.com/en/matches/928467bd/Liverpool-Norwich-City-August-9-2019-Premier-League")
+
+webpage <- read_html(url)
+
+webpage %>% html_nodes("span.name a ") %>% html_attr(name = "data-player-uid") 
+
+webpage %>% html_nodes("table") %>% html_table(fill = TRUE) -> tables
+
+test <- tables[[1]] 
+
+write_csv(test, "test.csv")
+tables[[4]]
+
+```
+
+
+```{r}
+gameids <- read_csv("gameid2020.csv")
+
+final_lineup2 <- tibble()
+
+for(i in 173:length(gameids$game_id)){
+  
+  url <- paste("https://www.espn.com/soccer/lineups?gameId=",gameids$game_id[[i]],sep="")
+  webpage <- read_html(url)
+  webpage %>% html_nodes("table") %>% html_table(fill = TRUE) -> tables
+  lineup <- data.frame(tables[[1]])
+  ## separate subs by '
+  ## get rid of numbers before
+  ## get rid of numbers after
+  ## then goals and saves
+  lineup_more <- lineup %>% select(Name)
+  lineup_players <- lineup_more %>% separate(Name, c("A", "B", "C"), sep = "\n\t\t\t\n\n\t\t\t\n\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\n\t\t\t\t\t")
+  lineup_players_just_numbers <- lineup_players %>% separate(B, c("A", "B"), sep = "\n")
+    ##get the top 11
+  subs_column <- removeNumbers(lineup_players_just_numbers$C)
+  subs_column <- gsub(" '","",subs_column)
+  
+  subs_column <- lineup_players_just_numbers %>% separate(C, c("A", "B"), sep="\n\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\n\t\t")
+    
+  lineup_players_just_numbers$A[is.na(lineup_players_just_numbers$A)] <- 0
+  subs_column$A[is.na(subs_column$A)] <- 0
+  
+  subs_df <- subs_column %>% select(A)
+  subs_df <- subs_df %>% filter(A != 0)
+  starters_df <- lineup_players_just_numbers%>% select(A)
+  starters_df <- starters_df$A[1:11]
+  starters_df <- as.data.frame(starters_df)
+  starters_df$starters_df -> starters_df$A
+  starters_df$Starter <- 1
+  starters_df <- starters_df %>% select(c(A, Starter))
+  
+  if((dim(subs_df)[1]==0)==FALSE){
+     subs_df$Starter <- 0
+  }
+  
+  all_lineup <- rbind(starters_df, subs_df)
+  all_lineup$gameid <- gameids$game_id[[i]]
+  
+  final_lineup2 <- rbind(final_lineup2, all_lineup)
+  Sys.sleep(3)
+}
+
+unique(final_lineup2$gameid)
+```
+
+
+```{r}
+gameids <- read_csv("gameid2020.csv")
+
+afinal_lineup1 <- tibble()
+
+for(i in 1:length(gameids$game_id)){
+  
+  url <- paste("https://www.espn.com/soccer/lineups?gameId=",gameids$game_id[[i]],sep="")
+  webpage <- read_html(url)
+  webpage %>% html_nodes("table") %>% html_table(fill = TRUE) -> tables
+  lineup <- data.frame(tables[[2]])
+  ## separate subs by '
+  ## get rid of numbers before
+  ## get rid of numbers after
+  ## then goals and saves
+  lineup_more <- lineup %>% select(Name)
+  lineup_players <- lineup_more %>% separate(Name, c("A", "B", "C"), sep = "\n\t\t\t\n\n\t\t\t\n\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\n\t\t\t\t\t")
+  lineup_players_just_numbers <- lineup_players %>% separate(B, c("A", "B"), sep = "\n")
+    ##get the top 11
+  subs_column <- removeNumbers(lineup_players_just_numbers$C)
+  subs_column <- gsub(" '","",subs_column)
+  
+  subs_column <- lineup_players_just_numbers %>% separate(C, c("A", "B"), sep="\n\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\n\t\t")
+    
+  lineup_players_just_numbers$A[is.na(lineup_players_just_numbers$A)] <- 0
+  subs_column$A[is.na(subs_column$A)] <- 0
+  
+  subs_df <- subs_column %>% select(A)
+  subs_df <- subs_df %>% filter(A != 0)
+  starters_df <- lineup_players_just_numbers%>% select(A)
+  starters_df <- starters_df$A[1:11]
+  starters_df <- as.data.frame(starters_df)
+  starters_df$starters_df -> starters_df$A
+  starters_df$Starter <- 1
+  starters_df <- starters_df %>% select(c(A, Starter))
+  
+  if((dim(subs_df)[1]==0)==FALSE){
+     subs_df$Starter <- 0
+  }
+  
+  all_lineup <- rbind(starters_df, subs_df)
+  all_lineup$gameid <- gameids$game_id[[i]]
+  
+  afinal_lineup1 <- rbind(afinal_lineup1, all_lineup)
+  Sys.sleep(3)
+}
+
+
+
+```
+
+```{r}
+
+home_lineup <- rbind(final_lineup1, final_lineup2)
+write_csv(home_lineup, "HomeLineups.csv")
+unique(home_lineup$gameid)
+
+away_lineup <- afinal_lineup1
+away_lineup$Starter <- gsub("1","-1",away_lineup$Starter)
+write_csv(away_lineup, "AwayLineups.csv")
+unique(away_lineup$gameid)
+
+```
+

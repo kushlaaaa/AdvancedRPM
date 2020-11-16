@@ -1,0 +1,125 @@
+---
+title: "RPM_Plots"
+output: html_document
+---
+
+```{r}
+# Load necessary packages
+library(tidyverse)
+library(ggplot2)
+library(ggrepel)
+
+# Load data and format the names correctly
+data <- read_csv("FinalRPMData.csv")
+players <- gsub("`","", data$PlayerNames)
+data$PlayerNames <- players
+
+# Filter the data for the attacking visualization
+att <- data %>% filter(MinutesPlayed >= 1140, Pos %in% c("FW","FWDF","FWMF"))
+attlabel1 <- att %>% filter(MinutesPlayed >= 2750, Pos %in% c("FW","FWDF","FWMF"))
+attlabel2 <- att %>% filter(AttRPM>.15, Pos %in% c("FW","FWDF","FWMF"))
+attlabel1 <- attlabel[-c(1), ]
+
+# Filter the data for the midfield visualization
+mid <- data %>% filter(MinutesPlayed >= 1140, Pos %in% c("MF","MFDF","MFFW"))
+midlabel1 <- mid %>% filter(MinutesPlayed >= 3000, Pos %in% c("MF","MFDF","MFFW"))
+midlabel2 <- mid %>% filter(RPM>.4, Pos %in% c("MF","MFDF","MFFW"))
+
+# Filter the data for the defending visualization
+def <- data %>% filter(MinutesPlayed >= 1140, Pos %in% c("DF","DFMF","DFFW"))
+deflabel1 <- def %>% filter(MinutesPlayed >= 3250, Pos %in% c("DF","DFMF","DFFW"))
+deflabel2 <- def %>% filter(DefRPM>.28, Pos %in% c("DF","DFMF","DFFW"))
+robbo <- def %>% filter(PlayerNames == "Andy Robertson")
+
+# Filter the data for the u21 visualization
+u21 <- data %>% filter(MinutesPlayed >= 342, Age <= 21)
+u21_1 <- u21 %>% filter(RPM > .5)
+u21_2 <- u21 %>% filter(MinutesPlayed >= 3000)
+```
+
+```{r}
+# Attacking Visualization
+ggplot() + geom_point(data=att, aes(x=MinutesPlayed, y=AttRPM), color = "red2") + geom_label_repel(data=attlabel1, aes(label = attlabel1$PlayerNames, x=MinutesPlayed, y=AttRPM),
+                                                 size = 2,
+                                                 box.padding = .4,                                                                                 point.padding = .5,
+                                                 segment.color = 'grey50',
+                                                 color = "black",
+                                                 fill = "grey",
+                                                 fontface = "bold",
+                                                 ) + geom_label_repel(data=attlabel2, aes(label = attlabel2$PlayerNames, x=MinutesPlayed, y=AttRPM),
+                                                 size = 2,
+                                                 box.padding = .25,                                                                                 point.padding = .25,
+                                                 segment.color = 'grey50',
+                                                 color = "black",
+                                                 fill = "grey",
+                                                 fontface = "bold",
+                                                 ) + xlab("Minutes Played") + ylab("Attacking RPM") + theme(panel.background = element_rect(colour = "gray50"),
+                                  plot.background = element_rect(colour = "white"),
+                                  plot.title = element_text(hjust = .5, face="bold")) + geom_hline(data=att, yintercept = mean(att$AttRPM), linetype = 2, color = "darkgrey") + geom_vline(data=att, xintercept = mean(att$MinutesPlayed), linetype = 2, color = "darkgrey") + theme_bw() + ggtitle(label = "Attacking RPM [> 1140 Mins., (FW, FWMF, FWDF)]")
+
+# Midfield Visualization
+ggplot() + geom_point(data=mid, aes(x=MinutesPlayed, y=RPM), color = "blue2") + geom_label_repel(data=midlabel1, aes(label = midlabel1$PlayerNames, x=MinutesPlayed, y=RPM),
+                                                 size = 2,
+                                                 box.padding = .4,                                                                                 point.padding = .5,
+                                                 segment.color = 'grey50',
+                                                 color = "black",
+                                                 fill = "grey",
+                                                 fontface = "bold",
+                                                 ) + geom_label_repel(data=midlabel2, aes(label = midlabel2$PlayerNames, x=MinutesPlayed, y=RPM),
+                                                 size = 2,
+                                                 box.padding = .25,                                                                                 point.padding = .25,
+                                                 segment.color = 'grey50',
+                                                 color = "black",
+                                                 fill = "grey",
+                                                 fontface = "bold",
+                                                 ) + xlab("Minutes Played") + ylab("RPM") + theme(panel.background = element_rect(colour = "gray50"),
+                                  plot.background = element_rect(colour = "white"),
+                                  plot.title = element_text(hjust = .5, face="bold")) + geom_hline(data=att, yintercept = mean(mid$RPM), linetype = 2, color = "darkgrey") + geom_vline(data=att, xintercept = mean(mid$MinutesPlayed), linetype = 2, color = "darkgrey") + theme_bw() + ggtitle(label = "Midfield RPM [> 1140 Mins., (MF, MFDF, MFFW)]")
+
+# Defending Visualization
+ggplot() + geom_point(data=def, aes(x=MinutesPlayed, y=DefRPM), color = "green4") + geom_label_repel(data=deflabel1, aes(label = deflabel1$PlayerNames, x=MinutesPlayed, y=DefRPM),
+                                                 size = 2,
+                                                 box.padding = .4,                                                                                 point.padding = .5,
+                                                 segment.color = 'grey50',
+                                                 color = "black",
+                                                 fill = "grey",
+                                                 fontface = "bold",
+                                                 ) + geom_label_repel(data=deflabel2, aes(label = deflabel2$PlayerNames, x=MinutesPlayed, y=DefRPM),
+                                                 size = 2,
+                                                 box.padding = .25,                                                                                 point.padding = .25,
+                                                 segment.color = 'grey50',
+                                                 color = "black",
+                                                 fill = "grey",
+                                                 fontface = "bold",
+                                                 ) + xlab("Minutes Played") + ylab("Defending RPM") + theme(panel.background = element_rect(colour = "gray50"),
+                                  plot.background = element_rect(colour = "white"),
+                                  plot.title = element_text(hjust = .5, face="bold")) + geom_hline(data=att, yintercept = mean(def$DefRPM), linetype = 2, color = "darkgrey") + geom_vline(data=att, xintercept = mean(def$MinutesPlayed), linetype = 2, color = "darkgrey") + theme_bw() + ggtitle(label = "Defending RPM [> 1140 Mins., (MF, MFDF, MFFW)]") + geom_label_repel(data=robbo, aes(label = robbo$PlayerNames, x=MinutesPlayed, y=DefRPM),
+                                                 size = 2,
+                                                 box.padding = .25,                                                                                 point.padding = .25,
+                                                 segment.color = 'grey50',
+                                                 color = "black",
+                                                 fill = "grey",
+                                                 fontface = "bold",
+                                                 )
+
+# U21 Visualization
+ggplot() + geom_point(data=u21, aes(x=MinutesPlayed, y=RPM), color = "darkgoldenrod1") + geom_label_repel(data=u21_1, aes(label = u21_1$PlayerNames, x=MinutesPlayed, y=RPM),
+                                                 size = 2,
+                                                 box.padding = .4,                                                                                 point.padding = .5,
+                                                 segment.color = 'grey50',
+                                                 color = "black",
+                                                 fill = "grey",
+                                                 fontface = "bold",
+                                                 ) + geom_label_repel(data=u21_2, aes(label = u21_2$PlayerNames, x=MinutesPlayed, y=RPM),
+                                                 size = 2,
+                                                 box.padding = .25,                                                                                 point.padding = .25,
+                                                 segment.color = 'grey50',
+                                                 color = "black",
+                                                 fill = "grey",
+                                                 fontface = "bold",
+                                                 ) + xlab("Minutes Played") + ylab("RPM") + theme(panel.background = element_rect(colour = "gray50"),
+                                  plot.background = element_rect(colour = "white"),
+                                  plot.title = element_text(hjust = .5, face="bold")) + geom_hline(data=att, yintercept = mean(u21$RPM), linetype = 2, color = "darkgrey") + geom_vline(data=att, xintercept = mean(u21$MinutesPlayed), linetype = 2, color = "darkgrey") + theme_bw() + ggtitle(label = "U21 Total RPM [> 342 Mins. (10%), (MF, MFDF, MFFW)]")
+```
+
+

@@ -1,0 +1,25 @@
+
+##Packages and Data
+```{r}
+library(tidyverse)
+library(fcscrapR)
+
+dates <- read_csv("2020GameDates.csv")
+
+```
+
+##2020 Season
+```{r}
+
+gameid2020 <- tibble()
+
+for(i in 1:length(dates$Date)){
+  dateids <- scrape_scoreboard_ids("english premier league", dates$Date[i])
+  gameid2020 <- rbind(gameid2020, dateids)
+  Sys.sleep(5)
+}
+
+write_csv(gameid2020, "gameid2020.csv")
+
+```
+

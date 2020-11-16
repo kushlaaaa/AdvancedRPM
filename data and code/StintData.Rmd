@@ -1,0 +1,177 @@
+
+```{r}
+library(tidyverse)
+```
+
+
+```{r}
+commentary <- read_csv("AllCommentary.csv")
+commentary$finalred[is.na(commentary$finalred)] <- 0
+gameids <- unique(commentary$game_id)
+
+
+data <- tibble()
+
+for(i in gameids){
+  stintnum <- commentary %>% filter(game_id == i)
+  stintnum$stintid <- cumsum(c(1, diff(stintnum$sub_stint)==1 | diff(stintnum$finalred)==1))
+  data <- rbind(data, stintnum)
+}
+
+data$stint_id <- paste(data$game_id,"_",data$stintid,sep="")
+
+data$penalty_att <- ifelse(grepl("penalty",data$commentary,ignore.case = TRUE) == TRUE & is.na(data$shot_result) == FALSE , 1, 0)
+data$shot_on_target <- ifelse(data$shot_result=="saved" | data$shot_result=="goal", 1, 0)
+data$counter_attacks <- ifelse(grepl("fast break",data$commentary,ignore.case = TRUE), 1, 0)
+data$red_card <- ifelse(data$card_type=="red", 1, 0)
+data$yellow_card <- ifelse(data$card_type=="yellow", 1, 0)
+data$red_name <- ifelse(data$finalred==1, data$card_player, "NA")
+data$goal <- ifelse(data$shot_result=="goal" | data$shot_result == "own_goal", 1, 0)
+
+data$home_goal <- ifelse(data$goal==1 & data$shot_by_team==data$team_one, 1, 0)
+data$away_goal <- ifelse(data$goal==1 & data$shot_by_team==data$team_two, 1, 0)
+
+data$home_shot_att <- ifelse(data$shot_by_team==data$team_one, 1, 0)
+data$away_shot_att <- ifelse(data$shot_by_team==data$team_two, 1, 0)
+
+data$home_shot_on_target <- ifelse(data$shot_by_team==data$team_one & data$shot_on_target==1, 1, 0)
+data$away_shot_on_target <- ifelse(data$shot_by_team==data$team_two & data$shot_on_target==1, 1, 0)
+
+data$home_penalty <- ifelse(data$shot_by_team==data$team_one & data$penalty_att==1, 1, 0)
+data$away_penalty <- ifelse(data$shot_by_team==data$team_two & data$penalty_att==1, 1, 0)
+
+data$home_counter_attacks <- ifelse(data$shot_by_team==data$team_one & data$counter_attacks==1, 1, 0)
+data$away_counter_attacks <- ifelse(data$shot_by_team==data$team_two & data$counter_attacks==1, 1, 0)
+
+data$home_corner <- ifelse(data$corner_team==data$team_one, 1, 0)
+data$away_corner <- ifelse(data$corner_team==data$team_two, 1, 0)
+
+data$home_offsides <- ifelse(data$offside_team==data$team_one, 1, 0)
+data$away_offsides <- ifelse(data$offside_team==data$team_two, 1, 0)
+
+data$home_foul <- ifelse(data$foul_by_team==data$team_one, 1, 0)
+data$away_foul <- ifelse(data$foul_by_team==data$team_two, 1, 0)
+
+data$home_free_kick_won <- ifelse(data$free_kick_team==data$team_one, 1, 0)
+data$away_free_kick_won <- ifelse(data$free_kick_team==data$team_two, 1, 0)
+
+data$home_red_card <- ifelse(data$card_team==data$team_one & data$red_card==1, 1, 0)
+data$away_red_card <- ifelse(data$card_team==data$team_two & data$red_card==1, 1, 0)
+
+data$home_yellow_card <- ifelse(data$card_team==data$team_one & data$yellow_card==1, 1, 0)
+data$away_yellow_card <- ifelse(data$card_team==data$team_two & data$yellow_card==1, 1, 0)
+
+data$home_key_pass <- ifelse(is.na(data$assist_type)==FALSE & data$shot_by_team==data$team_one, 1, 0)
+data$away_key_pass <- ifelse(is.na(data$assist_type)==FALSE & data$shot_by_team==data$team_two, 1, 0)
+
+data$shot_blocked_by_away <- ifelse(data$shot_by_team==data$team_one & data$shot_result=="blocked", 1, 0)
+data$shot_blocked_by_home <- ifelse(data$shot_by_team==data$team_two & data$shot_result=="blocked", 1, 0)
+
+home_offensive_stints <- data %>% group_by(game_id, stint_id) %>% 
+     summarize(game_id = last(game_id),
+                stint_id = last(stint_id),
+                home_team = last(team_one),
+                away_team = last(team_two),
+                start_stint_time = first(match_time_numeric),
+                end_stint_time = last(na.omit(match_time_numeric, na.rm = TRUE)),
+                goals_scored = sum(home_goal, na.rm=TRUE),
+                total_shot_attempt = sum(home_shot_att, na.rm = TRUE),
+                total_corner = sum(home_corner, na.rm = TRUE),
+                red_card_drawn = sum(away_red_card, na.rm = TRUE),
+                yellow_card_drawn = sum(away_yellow_card, na.rm = TRUE),
+                total_offside = sum(home_offsides, na.rm = TRUE),
+                total_free_kick_won = sum(home_free_kick_won, na.rm = TRUE),
+                total_penalty = sum(home_penalty, na.rm = TRUE),
+                counter_attacks = sum(home_counter_attacks, na.rm = TRUE),
+                shot_on_target = sum(home_shot_on_target, na.rm = TRUE),
+                subbed_player = first(sub_player),
+                replaced_player = first(replaced_player),
+                sub_team = first(sub_team),
+                red_name = first(red_name),
+                key_passes = sum(home_key_pass))
+home_offensive_stints$start_stint_time[is.na(home_offensive_stints$start_stint_time)] <- 0
+                
+
+away_offensive_stints <- data %>% group_by(game_id, stint_id) %>% 
+     summarize(game_id = last(game_id),
+                stint_id = last(stint_id),
+                home_team = last(team_one),
+                away_team = last(team_two),
+                start_stint_time = first(match_time_numeric),
+                end_stint_time = last(na.omit(match_time_numeric, na.rm = TRUE)),
+                goals_scored = sum(away_goal, na.rm=TRUE),
+                total_shot_attempt = sum(away_shot_att, na.rm = TRUE),
+                total_corner = sum(away_corner, na.rm = TRUE),
+                red_card_drawn = sum(away_red_card, na.rm = TRUE),
+                yellow_card_drawn = sum(away_yellow_card, na.rm = TRUE),
+                total_offside = sum(away_offsides, na.rm = TRUE),
+                total_free_kick_won = sum(away_free_kick_won, na.rm = TRUE),
+                total_penalty = sum(away_penalty, na.rm = TRUE),
+                counter_attacks = sum(away_counter_attacks, na.rm = TRUE),
+                shot_on_target = sum(away_shot_on_target, na.rm = TRUE),
+                subbed_player = first(sub_player),
+                replaced_player = first(replaced_player),
+                sub_team = first(sub_team),
+                red_name = first(red_name),
+                key_passes = sum(away_key_pass))
+away_offensive_stints$start_stint_time[is.na(away_offensive_stints$start_stint_time)] <- 0
+
+
+
+home_defensive_stints <- data %>% group_by(game_id, stint_id) %>% 
+     summarize(game_id = last(game_id),
+                stint_id = last(stint_id),
+                home_team = last(team_one),
+                away_team = last(team_two),
+                start_stint_time = first(match_time_numeric),
+                end_stint_time = last(na.omit(match_time_numeric, na.rm = TRUE)),
+                goals_allowed = sum(away_goal, na.rm=TRUE),
+                total_shot_attempt_allowed = sum(away_shot_att, na.rm = TRUE),
+                total_corner_allowed = sum(away_corner, na.rm = TRUE),
+                red_cards = sum(home_red_card, na.rm = TRUE),
+                yellow_cards = sum(home_yellow_card, na.rm = TRUE),
+                total_offsides_drawn = sum(away_offsides, na.rm = TRUE),
+                total_free_kicks_allowed = sum(away_free_kick_won, na.rm = TRUE),
+                total_penalty_allowed = sum(away_penalty, na.rm = TRUE),
+                counter_attacks_allowed = sum(away_counter_attacks, na.rm = TRUE),
+                shot_on_target_allowed = sum(away_shot_on_target, na.rm = TRUE),
+                subbed_player = first(sub_player),
+                replaced_player = first(replaced_player),
+                sub_team = first(sub_team),
+                red_name = first(red_name),
+                key_passes_allowed = sum(away_key_pass))
+home_defensive_stints$start_stint_time[is.na(home_defensive_stints$start_stint_time)] <- 0
+
+
+away_defensive_stints <- data %>% group_by(game_id, stint_id) %>% 
+     summarize(game_id = last(game_id),
+                stint_id = last(stint_id),
+                home_team = last(team_one),
+                away_team = last(team_two),
+                start_stint_time = first(match_time_numeric),
+                end_stint_time = last(na.omit(match_time_numeric, na.rm = TRUE)),
+                goals_allowed = sum(home_goal, na.rm=TRUE),
+                total_shot_attempt_allowed = sum(home_shot_att, na.rm = TRUE),
+                total_corner_allowed = sum(home_corner, na.rm = TRUE),
+                red_cards = sum(away_red_card, na.rm = TRUE),
+                yellow_cards = sum(away_yellow_card, na.rm = TRUE),
+                total_offside_drawn = sum(home_offsides, na.rm = TRUE),
+                total_free_kick_allowed = sum(home_free_kick_won, na.rm = TRUE),
+                total_penalty_allowed = sum(home_penalty, na.rm = TRUE),
+                counter_attacks_allowed = sum(home_counter_attacks, na.rm = TRUE),
+                shot_on_target_allowed = sum(home_shot_on_target, na.rm = TRUE),
+                subbed_player = first(sub_player),
+                replaced_player = first(replaced_player),
+                sub_team = first(sub_team),
+                red_name = first(red_name),
+                key_passes_allowed = sum(home_key_pass))
+away_defensive_stints$start_stint_time[is.na(away_defensive_stints$start_stint_time)] <- 0
+
+write_csv(home_offensive_stints, "HomeOffenseData.csv")
+write_csv(away_offensive_stints, "AwayOffenseData.csv")
+write_csv(home_defensive_stints, "HomeDefenseData.csv")
+write_csv(away_defensive_stints, "AwayDefenseData.csv")
+
+
+```
+

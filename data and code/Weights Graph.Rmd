@@ -1,0 +1,16 @@
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+```
+
+```{r}
+weights <- read_csv("Weights.csv")
+
+weightplot <- ggplot(data=weights, aes(x=Weights, y=Category, fill=Category)) + geom_bar(stat="identity", color="black") + ggtitle("Weights for Each Event") + geom_text(aes(label=Weights), hjust=-0.1, position=position_dodge(width=1), inherit.aes = TRUE) + theme_bw() + theme(legend.position = "none")
+
+weightplot
+
+ggsave("Weight.jpeg", weightplot)
+
+```

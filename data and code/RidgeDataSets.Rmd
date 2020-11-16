@@ -1,0 +1,166 @@
+
+```{r}
+library(tidyverse)
+library(ridge)
+```
+
+```{r}
+lineup_matrix <- read_csv("FINAL_LINEUP_MATRIX.csv")
+
+Offense <- read_csv("HomeOffenseData.csv")
+Defense <- read_csv("HomeDefenseData.csv")
+
+OffenseWithLineup <- merge(Offense, lineup_matrix, by="stint_id", all=TRUE)
+OffenseWithLineup <- OffenseWithLineup %>% select(-c(subbed_player, replaced_player, red_name, sub_team, Dummy))
+OffenseWithLineup$Stint_Time <- OffenseWithLineup$end_stint_time - OffenseWithLineup$start_stint_time
+OffenseWithLineup$StintTime <- ifelse(OffenseWithLineup$Stint_Time<1, 1,OffenseWithLineup$Stint_Time)
+OffenseWithLineup$Stint_Time <- NULL
+
+DefenseWithLineup <- merge(Defense, lineup_matrix, by="stint_id", all=TRUE)
+DefenseWithLineup <- DefenseWithLineup %>% select(-c(subbed_player, replaced_player, red_name, sub_team, Dummy))
+DefenseWithLineup$StintTime <- DefenseWithLineup$end_stint_time - DefenseWithLineup$start_stint_time
+DefenseWithLineup$Stint_Time <- DefenseWithLineup$end_stint_time - DefenseWithLineup$start_stint_time
+DefenseWithLineup$StintTime <- ifelse(DefenseWithLineup$Stint_Time<1, 1, DefenseWithLineup$Stint_Time)
+DefenseWithLineup$Stint_Time <- NULL
+
+
+```
+
+```{r}
+
+Per90OffenseWithLineup <- OffenseWithLineup %>% mutate(goals_scored=(90/StintTime)*goals_scored, total_shot_attempt=(90/StintTime)*total_shot_attempt, total_corner=(90/StintTime)*total_corner, yellow_card_drawn=(90/StintTime)*yellow_card_drawn, red_card_drawn=(90/StintTime)*red_card_drawn, total_offside=(90/StintTime)*total_offside, total_free_kick_won=(90/StintTime)*total_free_kick_won, total_penalty=(90/StintTime)*total_penalty, counter_attacks=(90/StintTime)*counter_attacks, shot_on_target=(90/StintTime)*shot_on_target, key_passes=(90/StintTime)*key_passes)
+
+Per90OffGoals <- Per90OffenseWithLineup %>% select(-c(home_team, away_team, stint_id, start_stint_time, end_stint_time ,game_id, total_shot_attempt, total_corner, yellow_card_drawn, red_card_drawn, total_offside, total_free_kick_won, total_penalty, counter_attacks, shot_on_target, key_passes, StintTime))
+
+Per90OffShotAtt <- Per90OffenseWithLineup %>% select(-c(home_team, away_team, stint_id, start_stint_time, end_stint_time ,game_id, goals_scored, total_corner, yellow_card_drawn, red_card_drawn, total_offside, total_free_kick_won, total_penalty, counter_attacks, shot_on_target, key_passes, StintTime))
+
+Per90OffCorners <- Per90OffenseWithLineup %>% select(-c(home_team, away_team, stint_id, start_stint_time, end_stint_time ,game_id, goals_scored, total_shot_attempt, yellow_card_drawn, red_card_drawn, total_offside, total_free_kick_won, total_penalty, counter_attacks, shot_on_target, key_passes, StintTime))
+
+Per90OffYellowCardsDrawn <- Per90OffenseWithLineup %>% select(-c(home_team, away_team, stint_id, start_stint_time, end_stint_time ,game_id, goals_scored, total_corner, total_shot_attempt, red_card_drawn, total_offside, total_free_kick_won, total_penalty, counter_attacks, shot_on_target, key_passes, StintTime))
+
+Per90OffRedCardsDrawn <- Per90OffenseWithLineup %>% select(-c(home_team, away_team, stint_id, start_stint_time, end_stint_time ,game_id, total_shot_attempt, total_corner, yellow_card_drawn, goals_scored, total_offside, total_free_kick_won, total_penalty, counter_attacks, shot_on_target, key_passes, StintTime))
+
+Per90OffFreeKicksWon <- Per90OffenseWithLineup %>% select(-c(home_team, away_team, stint_id, start_stint_time, end_stint_time ,game_id, total_shot_attempt, total_corner, yellow_card_drawn, red_card_drawn, total_offside, goals_scored, total_penalty, counter_attacks, shot_on_target, key_passes, StintTime))
+
+Per90OffPenalties <- Per90OffenseWithLineup %>% select(-c(home_team, away_team, stint_id, start_stint_time, end_stint_time ,game_id, total_shot_attempt, total_corner, yellow_card_drawn, red_card_drawn, total_offside, total_free_kick_won, goals_scored, counter_attacks, shot_on_target, key_passes, StintTime))
+
+Per90OffCounterAttacks <- Per90OffenseWithLineup %>% select(-c(home_team, away_team, stint_id, start_stint_time, end_stint_time ,game_id, total_shot_attempt, total_corner, yellow_card_drawn, red_card_drawn, total_offside, total_free_kick_won, total_penalty, goals_scored, shot_on_target, key_passes, StintTime))
+
+Per90OffShotsOnTarget <- Per90OffenseWithLineup %>% select(-c(home_team, away_team, stint_id, start_stint_time, end_stint_time ,game_id, total_shot_attempt, total_corner, yellow_card_drawn, red_card_drawn, total_offside, total_free_kick_won, total_penalty, counter_attacks, goals_scored, key_passes, StintTime))
+
+Per90OffKeyPasses <- Per90OffenseWithLineup %>% select(-c(home_team, away_team, stint_id, start_stint_time, end_stint_time ,game_id, total_shot_attempt, total_corner, yellow_card_drawn, red_card_drawn, total_offside, total_free_kick_won, total_penalty, counter_attacks, shot_on_target, goals_scored, StintTime))
+
+OffGoalsRidge <- linearRidge(goals_scored~.-1, Per90OffGoals)
+OffShotAttRidge <- linearRidge(total_shot_attempt~.-1, Per90OffShotAtt)
+OffCornersRidge <- linearRidge(total_corner~.-1, Per90OffCorners)
+OffYellowCardsRidge <- linearRidge(yellow_card_drawn~.-1, Per90OffYellowCardsDrawn)
+OffRedCardsRidge <- linearRidge(red_card_drawn~.-1, Per90OffRedCardsDrawn)
+OffFreeKicksRidge <- linearRidge(total_free_kick_won~.-1, Per90OffFreeKicksWon)
+OffPenaltiesRidge <- linearRidge(total_penalty~.-1, Per90OffPenalties)
+OffCounterAttacksRidge <- linearRidge(counter_attacks~.-1, Per90OffCounterAttacks)
+OffShotsOnTargetRidge <- linearRidge(shot_on_target~.-1, Per90OffShotsOnTarget)
+OffKeyPassesRidge <- linearRidge(key_passes~.-1, Per90OffKeyPasses)
+
+OffGoalsCoef <- data.frame(coef(OffGoalsRidge))
+OffShotAttemptsCoef <- data.frame(coef(OffShotAttRidge))
+OffCornersCoef <- data.frame(coef(OffCornersRidge))
+OffYellowCardsCoef <- data.frame(coef(OffYellowCardsRidge))
+OffRedCardsCoef <- data.frame(coef(OffRedCardsRidge))
+OffFreeKicksCoef <- data.frame(coef(OffFreeKicksRidge))
+OffPenaltiesCoef <- data.frame(coef(OffPenaltiesRidge))
+OffCounterAttacksCoef <- data.frame(coef(OffCounterAttacksRidge))
+OffShotsOnTargetCoef <- data.frame(coef(OffShotsOnTargetRidge))
+OffKeyPassesCoef <- data.frame(coef(OffKeyPassesRidge))
+
+OffShotsOnTargetRidge
+
+OffensiveCoefs <- cbind(OffGoalsCoef, OffShotAttemptsCoef, OffCornersCoef, OffYellowCardsCoef, OffRedCardsCoef, OffFreeKicksCoef, OffPenaltiesCoef, OffCounterAttacksCoef, OffShotsOnTargetCoef, OffKeyPassesCoef)
+
+OffensiveRowNames <- rownames(OffensiveCoefs)
+OffensiveCoefs <- cbind(OffensiveRowNames, OffensiveCoefs)
+```
+
+
+```{r}
+Per90DefenseWithLineup <- DefenseWithLineup %>% mutate(goals_allowed=(90/StintTime)*goals_allowed, total_shot_attempt_allowed=(90/StintTime)*total_shot_attempt_allowed, total_corner_allowed=(90/StintTime)*total_corner_allowed, yellow_cards=(90/StintTime)*yellow_cards, red_cards=(90/StintTime)*red_cards, total_offsides_drawn=(90/StintTime)*total_offsides_drawn, total_free_kicks_allowed=(90/StintTime)*total_free_kicks_allowed, total_penalty_allowed=(90/StintTime)*total_penalty_allowed, counter_attacks_allowed=(90/StintTime)*counter_attacks_allowed, shot_on_target_allowed=(90/StintTime)*shot_on_target_allowed, key_passes_allowed=(90/StintTime)*key_passes_allowed)
+
+Per90DefGoals <- Per90DefenseWithLineup %>% select(-c(home_team, away_team, start_stint_time, end_stint_time, game_id, total_shot_attempt_allowed, total_corner_allowed, yellow_cards, red_cards, total_offsides_drawn, total_free_kicks_allowed, total_penalty_allowed, counter_attacks_allowed, shot_on_target_allowed, key_passes_allowed, StintTime, stint_id))
+
+Per90DefShotAtt <- Per90DefenseWithLineup %>% select(-c(home_team, away_team, start_stint_time, end_stint_time, game_id, goals_allowed, total_corner_allowed, yellow_cards, red_cards, total_offsides_drawn, total_free_kicks_allowed, total_penalty_allowed, counter_attacks_allowed, shot_on_target_allowed, key_passes_allowed, StintTime, stint_id))
+
+Per90DefCorners <- Per90DefenseWithLineup %>% select(-c(home_team, away_team, start_stint_time, end_stint_time, game_id, total_shot_attempt_allowed, goals_allowed, yellow_cards, red_cards, total_offsides_drawn, total_free_kicks_allowed, total_penalty_allowed, counter_attacks_allowed, shot_on_target_allowed, key_passes_allowed, StintTime, stint_id))
+
+Per90DefYellowCardsDrawn <- Per90DefenseWithLineup %>%  select(-c(home_team, away_team, start_stint_time, end_stint_time, game_id, total_shot_attempt_allowed, total_corner_allowed, goals_allowed, red_cards, total_offsides_drawn, total_free_kicks_allowed, total_penalty_allowed, counter_attacks_allowed, shot_on_target_allowed, key_passes_allowed, StintTime, stint_id))
+
+Per90DefRedCardsDrawn <- Per90DefenseWithLineup %>%  select(-c(home_team, away_team, start_stint_time, end_stint_time, game_id, total_shot_attempt_allowed, total_corner_allowed, yellow_cards, goals_allowed, total_offsides_drawn, total_free_kicks_allowed, total_penalty_allowed, counter_attacks_allowed, shot_on_target_allowed, key_passes_allowed, StintTime, stint_id))
+
+Per90DefFreeKicksWon <- Per90DefenseWithLineup %>%   select(-c(home_team, away_team, start_stint_time, end_stint_time, game_id, total_shot_attempt_allowed, total_corner_allowed, yellow_cards, red_cards, total_offsides_drawn, goals_allowed, total_penalty_allowed, counter_attacks_allowed, shot_on_target_allowed, key_passes_allowed, StintTime, stint_id))
+
+Per90DefPenalties <- Per90DefenseWithLineup %>%  select(-c(home_team, away_team, start_stint_time, end_stint_time, game_id, total_shot_attempt_allowed, total_corner_allowed, yellow_cards, red_cards, total_offsides_drawn, total_free_kicks_allowed, goals_allowed, counter_attacks_allowed, shot_on_target_allowed, key_passes_allowed, StintTime, stint_id))
+
+Per90DefCounterAttacks <- Per90DefenseWithLineup %>%  select(-c(home_team, away_team, start_stint_time, end_stint_time, game_id, total_shot_attempt_allowed, total_corner_allowed, yellow_cards, red_cards, total_offsides_drawn, total_free_kicks_allowed, total_penalty_allowed, goals_allowed, shot_on_target_allowed, key_passes_allowed, StintTime, stint_id))
+
+Per90DefShotsOnTarget <- Per90DefenseWithLineup %>%  select(-c(home_team, away_team, start_stint_time, end_stint_time, game_id, total_shot_attempt_allowed, total_corner_allowed, yellow_cards, red_cards, total_offsides_drawn, total_free_kicks_allowed, total_penalty_allowed, counter_attacks_allowed, goals_allowed, key_passes_allowed, StintTime, stint_id))
+
+Per90DefKeyPasses <- Per90DefenseWithLineup %>%  select(-c(home_team, away_team, start_stint_time, end_stint_time, game_id, total_shot_attempt_allowed, total_corner_allowed, yellow_cards, red_cards, total_offsides_drawn, total_free_kicks_allowed, total_penalty_allowed, counter_attacks_allowed, shot_on_target_allowed, goals_allowed, StintTime, stint_id))
+
+DefGoalsRidge <- linearRidge(goals_allowed~.-1, Per90DefGoals)
+DefShotAttRidge <- linearRidge(total_shot_attempt_allowed~.-1, Per90DefShotAtt)
+DefCornersRidge <- linearRidge(total_corner_allowed~.-1, Per90DefCorners)
+DefYellowCardsRidge <- linearRidge(yellow_cards~.-1, Per90DefYellowCardsDrawn)
+DefRedCardsRidge <- linearRidge(red_cards~.-1, Per90DefRedCardsDrawn)
+DefFreeKicksRidge <- linearRidge(total_free_kicks_allowed~.-1, Per90DefFreeKicksWon)
+DefPenaltiesRidge <- linearRidge(total_penalty_allowed~.-1, Per90DefPenalties)
+DefCounterAttacksRidge <- linearRidge(counter_attacks_allowed~.-1, Per90DefCounterAttacks)
+DefShotsOnTargetRidge <- linearRidge(shot_on_target_allowed~.-1, Per90DefShotsOnTarget)
+DefKeyPassesRidge <- linearRidge(key_passes_allowed~.-1, Per90DefKeyPasses)
+
+DefGoalsCoef <- data.frame(coef(DefGoalsRidge))
+DefShotAttemptsCoef <- data.frame(coef(DefShotAttRidge))
+DefCornersCoef <- data.frame(coef(DefCornersRidge))
+DefYellowCardsCoef <- data.frame(coef(DefYellowCardsRidge))
+DefRedCardsCoef <- data.frame(coef(DefRedCardsRidge))
+DefFreeKicksCoef <- data.frame(coef(DefFreeKicksRidge))
+DefPenaltiesCoef <- data.frame(coef(DefPenaltiesRidge))
+DefCounterAttacksCoef <- data.frame(coef(DefCounterAttacksRidge))
+DefShotsOnTargetCoef <- data.frame(coef(DefShotsOnTargetRidge))
+DefKeyPassesCoef <- data.frame(coef(DefKeyPassesRidge))
+
+DefensiveCoefs <- cbind(DefGoalsCoef, DefShotAttemptsCoef, DefCornersCoef, DefYellowCardsCoef, DefRedCardsCoef, DefFreeKicksCoef, DefPenaltiesCoef, DefCounterAttacksCoef, DefShotsOnTargetCoef, DefKeyPassesCoef)
+
+DefensiveRowNames <- rownames(DefensiveCoefs)
+DefensiveCoefs <- cbind(DefensiveRowNames, DefensiveCoefs)
+```
+
+
+```{r}
+write_csv(OffensiveCoefs, "OffensiveCoefs.csv")
+write_csv(DefensiveCoefs, "DefensiveCoefs.csv")
+
+GoalsWeight <- 1
+ShotAttWeight <- 0.107951 #1002/9282
+CornersWeight <- 0.03
+YellowCardsWeight <- 0.029478458
+RedCardsWeight <- 0.088435374
+FreeKicksWeight <- 0.021
+PenaltiesWeight <- 0.76
+CounterAttacksWeight <- 0.124
+ShotsOnTargetWeight <- 0.32853 ##1002/3094
+KeyPassesWeight <- 0.099448 #36/362
+
+OffensiveCoefs$AttRPM <- (GoalsWeight*OffensiveCoefs$coef.OffGoalsRidge.)+(ShotAttWeight*OffensiveCoefs$coef.OffShotAttRidge.)+(CornersWeight*OffensiveCoefs$coef.OffCornersRidge.)+(YellowCardsWeight*OffensiveCoefs$coef.OffYellowCardsRidge.)+(RedCardsWeight*OffensiveCoefs$coef.OffRedCardsRidge.)+(FreeKicksWeight*OffensiveCoefs$coef.OffFreeKicksRidge.)+(PenaltiesWeight*OffensiveCoefs$coef.OffPenaltiesRidge.)+(CounterAttacksWeight*OffensiveCoefs$coef.OffCounterAttacksRidge.)+(ShotsOnTargetWeight*OffensiveCoefs$coef.OffShotsOnTargetRidge.)+(KeyPassesWeight*OffensiveCoefs$coef.OffKeyPassesRidge.)
+
+DefensiveCoefs$DefRPM <- (-GoalsWeight*DefensiveCoefs$coef.DefGoalsRidge.)+(-ShotAttWeight*DefensiveCoefs$coef.DefShotAttRidge.)+(-CornersWeight*DefensiveCoefs$coef.DefCornersRidge.)+(-YellowCardsWeight*DefensiveCoefs$coef.DefYellowCardsRidge.)+(-RedCardsWeight*DefensiveCoefs$coef.DefRedCardsRidge.)+(-FreeKicksWeight*DefensiveCoefs$coef.DefFreeKicksRidge.)+(-PenaltiesWeight*DefensiveCoefs$coef.DefPenaltiesRidge.)+(-CounterAttacksWeight*DefensiveCoefs$coef.DefCounterAttacksRidge.)+(-ShotsOnTargetWeight*DefensiveCoefs$coef.DefShotsOnTargetRidge.)+(-KeyPassesWeight*DefensiveCoefs$coef.DefKeyPassesRidge.)
+
+PlayerNames <- OffensiveCoefs$OffensiveRowNames
+AttRPM <- OffensiveCoefs$AttRPM
+DefRPM <- DefensiveCoefs$DefRPM
+finalrpmdata <- as.data.frame(cbind(PlayerNames, AttRPM, DefRPM))
+finalrpmdata$AttRPM <- as.numeric(finalrpmdata$AttRPM)
+finalrpmdata$DefRPM <- as.numeric(finalrpmdata$DefRPM)
+finalrpmdata$rpm <- (finalrpmdata$AttRPM+finalrpmdata$DefRPM)
+write_csv(finalrpmdata, "FinalRPMData.csv")
+
+
+```
+
